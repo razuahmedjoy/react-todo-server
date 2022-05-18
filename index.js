@@ -5,7 +5,7 @@ const port = process.env.PORT || 5000
 const jwt = require('jsonwebtoken');
 
 // DB CONNECTION
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 require('dotenv').config()
@@ -48,6 +48,67 @@ const connectDB = async () => {
     try {
         await client.connect();
         const todoCollection = client.db("todo-app").collection("todos");
+
+        // add new task
+        app.post("/task/add", async (req, res)=>{
+            const task = req.body;
+            const result = await todoCollection.insertOne(task);
+            res.send(result);
+        })
+
+        // get all tasks by user
+        app.get("/tasks/:email", async (req, res)=>{
+
+            const email = req.params.email;
+
+            const filter = {
+                user:email
+            }
+
+            const userTasks = await todoCollection.find(filter).toArray();
+
+            res.send(userTasks);
+        })
+
+        // update task
+        app.put("/task/update/:id", async (req, res) => {
+
+            const taskId = req.params.id;
+
+            const filter = {
+
+                _id:ObjectId(taskId),
+
+            }
+            const updateDoc = {
+                $set:{
+                    status:'completed',
+                }
+            }
+
+            const result = await todoCollection.updateOne(filter,updateDoc)
+
+            res.send(result)
+
+        })
+
+        // delete a task
+        app.delete("/task/delete/:id", async(req, res)=>{
+
+            const taskId = req.params.id;
+
+            const filter = {
+
+                _id:ObjectId(taskId),
+
+            }
+
+            const result = await todoCollection.deleteOne(filter)
+            res.send(result)
+
+        })
+
+
 
     }
 
